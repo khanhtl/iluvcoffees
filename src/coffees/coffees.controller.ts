@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res } fr
 import { Response } from 'express';
 import { CoffeesService } from './coffees.service';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
+import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 
 @Controller('coffees')
 export class CoffeesController {
@@ -12,22 +13,26 @@ export class CoffeesController {
   }
 
   @Post()
-  create(@Body() createCoffeeDto: CreateCoffeeDto, @Res() res: Response) {
-    return res.status(HttpStatus.CREATED).json(this.coffeesService.addCoffee(createCoffeeDto));
+  async create(@Body() createCoffeeDto: CreateCoffeeDto, @Res() res: Response) {
+    const coffee = await this.coffeesService.addCoffee(createCoffeeDto);
+    return res.status(HttpStatus.CREATED).json(coffee);
   }
 
   @Patch(':id')
-  update(@Body() createCoffeeDto: CreateCoffeeDto, @Param('id') id: number, @Res() res: Response) {
-    return res.status(HttpStatus.OK).json(this.coffeesService.updateCoffee(id, createCoffeeDto));
+  async update(@Body() updateCoffeeDto: UpdateCoffeeDto, @Param('id') id: number, @Res() res: Response) {
+    const coffee = await this.coffeesService.updateCoffee(id, updateCoffeeDto);
+    return res.status(HttpStatus.OK).json(coffee);
   }
 
   @Get(':id')
-  findById(@Param('id') id: number, @Res() res: Response) {
-    return res.status(HttpStatus.OK).json(this.coffeesService.findCoffeeById(id));
+  async findById(@Param('id') id: number, @Res() res: Response) {
+    const coffee = await this.coffeesService.findCoffeeById(id);
+    return res.status(HttpStatus.OK).json(coffee);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number, @Res() res: Response) {
-    return res.status(HttpStatus.OK).json(this.coffeesService.deleteCoffee(id));
+  async delete(@Param('id') id: number, @Res() res: Response) {
+    const result = await this.coffeesService.deleteCoffee(id);
+    return res.status(HttpStatus.OK).json(result);
   }
 }

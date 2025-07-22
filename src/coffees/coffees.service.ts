@@ -1,54 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { Coffee } from './entity/coffee';
 
 @Injectable()
 export class CoffeesService {
-    private coffees: Coffee[] = [{
-        id: 1,
-        name: 'Espresso',
-        brand: 'CoffeeBrand',
-        flavors: ['bitter', 'strong']
-    }];
+    constructor(
+        @InjectRepository(Coffee)
+        private readonly coffeesRepository: Repository<Coffee>
+    ) {}
     
     getAll() {
-        return this.coffees;
+        return this.coffeesRepository.find();
     }
     
     addCoffee(createCoffeeDto: CreateCoffeeDto) {
-        const newCoffee = {
-            ...createCoffeeDto,
-            id: Date.now(), 
-        };
-        this.coffees.push(newCoffee);
-        return newCoffee;
+        const newCoffee = this.coffeesRepository.create(createCoffeeDto);
+        return this.coffeesRepository.save(newCoffee);
     }
 
-    findCoffeeById(id: number): Coffee {
-        const coffee =  this.coffees.find(coffee => coffee.id === id);
+    async findCoffeeById(id: number): Promise<Coffee> {
+        const coffee = await this.coffeesRepository.findOne({ where: { id } });
         if (!coffee) {
             throw new NotFoundException(`Coffee with ID ${id} not found`);
         }
         return coffee;
     }
 
-    updateCoffee(id: number, updatedCoffee: UpdateCoffeeDto): Coffee | undefined {
-        const coffee = this.findCoffeeById(id);
-        if (coffee) {
-            Object.assign(coffee, updatedCoffee);
-            return coffee;
+    async updateCoffee(id: number, updatedCoffee: UpdateCoffeeDto): Promise<Coffee> {
+        const coffee = await this.coffeesRepository.preload({ id, ...updatedCoffee });
+        if (!coffee) {
+            throw new NotFoundException(`Coffee with ID ${id} not found`);
         }
-        return undefined;
+        return this.coffeesRepository.save(coffee);
     }
 
-    deleteCoffee(id: number): boolean {
-        this.findCoffeeById(id);
-        const index = this.coffees.findIndex(coffee => coffee.id === id);
-        if (index !== -1) {
-            this.coffees.splice(index, 1);
-            return true;
-        }
-        return false;
+    async deleteCoffee(id: number): Promise<Coffee> {
+        const coffee = await this.findCoffeeById(id);
+        return await this.coffeesRepository.remove(coffee);
     }
 }
